@@ -1,0 +1,213 @@
+<Window x:Class="искулинария.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Информационная система — Кулинария"
+        Width="1240"
+        Height="760"
+        MinWidth="900"
+        MinHeight="580"
+        WindowStartupLocation="CenterScreen"
+        Background="#EFF7F7"
+        Style="{StaticResource MaterialDesignWindow}">
+    <Window.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="#7543B8" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="20,0" />
+            <Setter Property="Height" Value="62" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0,0,0,3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#D9F4F8" />
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#7543B8" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#E7F6F7" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="110" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="96" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="210" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0" Grid.Column="0" Background="#EFF7F7" />
+
+        <Border Grid.Row="1" Grid.Column="0" Background="#75D6E8" CornerRadius="0,50,0,0">
+            <StackPanel Margin="20,18,16,20">
+                <TextBlock Text="Пользователь:" FontWeight="Bold" Foreground="#173A43" FontSize="15" />
+                <TextBlock x:Name="UserNameText" Text="ФИО" Margin="0,38,0,0" Foreground="#315E67" FontSize="14" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Grid.Column="0" Background="#75D6E8" CornerRadius="0,0,0,50">
+            <Button Width="124" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Content="Выход" Style="{StaticResource MaterialDesignRaisedButton}" Click="ExitButton_OnClick" />
+        </Border>
+
+        <TabControl x:Name="MainTabs" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                    Margin="20,18,24,0" Background="Transparent" BorderThickness="0" SelectedIndex="0"
+                    SelectionChanged="MainTabs_OnSelectionChanged">
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Images/dish.png" Width="24" Height="24" Margin="0,0,9,0" />
+                                <TextBlock Text="БЛЮДА" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </TabItem.Header>
+                        <Grid Margin="14,18,14,10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="8,0,8,18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="SearchBox"
+                                         Height="44"
+                                         Margin="0,0,22,0"
+                                         Padding="12,7"
+                                         VerticalContentAlignment="Center"
+                                         materialDesign:HintAssist.Hint="Поиск"
+                                         TextChanged="SearchBox_OnTextChanged" />
+                                <ComboBox x:Name="CategoryComboBox"
+                                          Grid.Column="1"
+                                          Height="44"
+                                          Padding="10,5"
+                                          VerticalContentAlignment="Center"
+                                          DisplayMemberPath="Name"
+                                          materialDesign:HintAssist.Hint="Категория"
+                                          SelectionChanged="CategoryComboBox_OnSelectionChanged" />
+                                <Button x:Name="AddDishButton"
+                                        Grid.Column="3"
+                                        Width="64"
+                                        Height="48"
+                                        Margin="0,0,0,0"
+                                        Padding="0"
+                                        Content="+"
+                                        FontSize="28"
+                                        Foreground="White"
+                                        Background="#673AB7"
+                                        Click="RefreshButton_OnClick" />
+                            </Grid>
+                            <Grid Grid.Row="1">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl x:Name="BludoItems">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><StackPanel /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Height="146" Margin="0,0,0,16" Background="#E6E6F8" BorderBrush="#202126" BorderThickness="2" CornerRadius="13">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="152" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="100" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Width="134" Height="116" Margin="10" Background="White" ClipToBounds="True">
+                                                            <Image Source="{Binding Image}" Stretch="Uniform" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,8">
+                                                            <TextBlock Foreground="#3A3E4B" FontSize="16" TextWrapping="Wrap">
+                                                                <Run Text="Наименование: " />
+                                                                <Run Text="{Binding Name}" />
+                                                                <Run Text="  |  " />
+                                                                <Run Text="Категория: " FontWeight="Bold" />
+                                                                <Run Text="{Binding CategoryName}" />
+                                                            </TextBlock>
+                                                            <TextBlock Margin="0,6,0,0" Foreground="#3A3E4B" FontSize="16">
+                                                                <Run Text="Основа: " />
+                                                                <Run Text="{Binding Base}" />
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="2"
+                                                                   Margin="0,0,24,0"
+                                                                   HorizontalAlignment="Right"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="#E21C2A"
+                                                                   FontSize="20"
+                                                                   FontWeight="Bold"
+                                                                   Text="{Binding Yield}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                                <TextBlock x:Name="EmptyMessage" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#536D70" FontSize="16" Text="В базе пока нет блюд." />
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem x:Name="ProductsTabItem">
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Images/diet.png" Width="24" Height="24" Margin="0,0,9,0" />
+                                <TextBlock Text="ПРОДУКТЫ" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </TabItem.Header>
+                        <Grid Margin="22">
+                            <StackPanel>
+                                <TextBlock Text="Продукты" FontSize="23" FontWeight="SemiBold" Foreground="#263E41" />
+                                <TextBlock Text="Состав и пищевая ценность продуктов будут выведены здесь." Margin="0,8,0,0" Foreground="#607572" />
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem x:Name="RecipesTabItem">
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Images/recipe.png" Width="24" Height="24" Margin="0,0,9,0" />
+                                <TextBlock Text="РЕЦЕПТЫ" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </TabItem.Header>
+                        <Grid Margin="22">
+                            <StackPanel>
+                                <TextBlock Text="Рецепты" FontSize="23" FontWeight="SemiBold" Foreground="#263E41" />
+                                <TextBlock Text="Рецепты связаны с блюдами и хранятся в таблице rezepty." Margin="0,8,0,0" Foreground="#607572" />
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem x:Name="UsersTabItem">
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Images/profil.jpg" Width="24" Height="24" Margin="0,0,9,0" Stretch="Uniform" />
+                                <TextBlock Text="ПОЛЬЗОВАТЕЛИ" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </TabItem.Header>
+                        <Frame x:Name="AdminFrame" NavigationUIVisibility="Hidden" />
+                    </TabItem>
+                </TabControl>
+        <Border Grid.Row="2" Grid.Column="1" Background="#EFF7F7">
+            <TextBlock x:Name="ConnectionStatus" Visibility="Collapsed" Text="Подключение к базе…" />
+        </Border>
+    </Grid>
+</Window>
