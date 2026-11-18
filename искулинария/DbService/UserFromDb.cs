@@ -5,6 +5,31 @@ namespace искулинария.DbService;
 
 public sealed class UserFromDb(NpgsqlDataSource dataSource)
 {
+    public static bool IsPasswordValid(string password) =>
+        password.Length >= 6 &&
+        password.Any(char.IsUpper) &&
+        password.Any(char.IsDigit) &&
+        password.Any(character => "!@#$%^".Contains(character));
+
+    public bool UserExists(string login)
+    {
+        const string sql = "SELECT EXISTS (SELECT 1 FROM public.users WHERE LOWER(login) = LOWER(@login));";
+        using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue("login", login.Trim());
+        return (bool)command.ExecuteScalar()!;
+    }
+
+    public void UserAdd(string login, string password, string firstName, string lastName)
+    {
+        const string sql = "INSERT INTO public.users (login, password, first_name, last_name) VALUES (@login, @password, @first_name, @last_name);";
+        using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue("login", login.Trim());
+        command.Parameters.AddWithValue("password", Verification.GetSHA512Hash(password));
+        command.Parameters.AddWithValue("first_name", firstName.Trim());
+        command.Parameters.AddWithValue("last_name", lastName.Trim());
+        command.ExecuteNonQuery();
+    }
+
     public async Task<User?> AuthenticateAsync(string login, string password, CancellationToken cancellationToken = default)
     {
         const string sql = """

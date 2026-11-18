@@ -55,6 +55,14 @@ public partial class AuthWindow : Window
         }
     }
 
+    private void RegisterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var registrationWindow = new RegistrationForm();
+        Application.Current.MainWindow = registrationWindow;
+        registrationWindow.Show();
+        Close();
+    }
+
     private void CredentialBox_OnKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
