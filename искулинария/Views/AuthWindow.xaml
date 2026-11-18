@@ -32,6 +32,12 @@
                     Content="Войти"
                     Style="{StaticResource MaterialDesignRaisedButton}"
                     Click="LoginButton_OnClick" />
+            <Button x:Name="RegisterButton"
+                    Height="34"
+                    Margin="0,8,0,0"
+                    Content="Зарегистрироваться"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Click="RegisterButton_OnClick" />
             <TextBlock x:Name="StatusText"
                        Margin="0,10,0,0"
                        MinHeight="36"
