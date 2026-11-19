@@ -2,6 +2,7 @@ using System.Windows;
 using искулинария.DbService;
 using искулинария.Model;
 using искулинария.Views;
+using искулинария.Views.Windows;
 using искулинария.Views.Pages;
 
 namespace искулинария;
@@ -95,6 +96,15 @@ public partial class MainWindow : Window
         await LoadDataAsync();
     }
 
+    private void ProfileButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (AuthWindow.CurrentUser is not { } currentUser)
+            return;
+
+        var profileWindow = new ProfileWindow(currentUser) { Owner = this };
+        if (profileWindow.ShowDialog() == true)
+            UserNameText.Text = currentUser.FullName;
+    }
     private void ExitButton_OnClick(object sender, RoutedEventArgs e)
     {
         AuthWindow.CurrentUser = null;
