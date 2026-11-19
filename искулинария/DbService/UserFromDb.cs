@@ -52,9 +52,59 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
         if (!Verification.VerifySHA512Hash(password, passwordHash))
             return null;
 
-        return ReadUser(reader);
+        var user = ReadUser(reader);
+        user.PasswordHash = passwordHash;
+        return user;
     }
 
+    public void UserUpdateProfil(User user, bool isPasswordChanged)
+    {
+        var sql = isPasswordChanged
+            ? """
+              UPDATE public.users
+              SET first_name = @first_name,
+                  last_name = @last_name,
+                  patronymic = @patronymic,
+                  date_of_birthday = @date_of_birthday,
+                  login = @login,
+                  phone = @phone,
+                  adress = @adress,
+                  password = @password
+              WHERE user_id = @user_id;
+              """
+            : """
+              UPDATE public.users
+              SET first_name = @first_name,
+                  last_name = @last_name,
+                  patronymic = @patronymic,
+                  date_of_birthday = @date_of_birthday,
+                  login = @login,
+                  phone = @phone,
+                  adress = @adress
+              WHERE user_id = @user_id;
+              """;
+
+        if (isPasswordChanged && string.IsNullOrWhiteSpace(user.PasswordHash))
+            throw new InvalidOperationException("Не задан новый хеш пароля.");
+
+        using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue("user_id", user.UserId);
+        command.Parameters.AddWithValue("first_name", user.FirstName.Trim());
+        command.Parameters.AddWithValue("last_name", user.LastName.Trim());
+        command.Parameters.AddWithValue("patronymic", (object?)NullIfEmpty(user.Patronymic) ?? DBNull.Value);
+        command.Parameters.AddWithValue("date_of_birthday", NpgsqlTypes.NpgsqlDbType.Date, (object?)user.DateOfBirthday?.Date ?? DBNull.Value);
+        command.Parameters.AddWithValue("login", user.Login.Trim());
+        command.Parameters.AddWithValue("phone", (object?)NullIfEmpty(user.Phone) ?? DBNull.Value);
+        command.Parameters.AddWithValue("adress", (object?)NullIfEmpty(user.Address) ?? DBNull.Value);
+        if (isPasswordChanged)
+            command.Parameters.AddWithValue("password", user.PasswordHash);
+
+        if (command.ExecuteNonQuery() != 1)
+            throw new InvalidOperationException("Профиль пользователя не найден в базе данных.");
+    }
+
+    private static string? NullIfEmpty(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     public async Task<List<User>> LoadAllUsersAsync(CancellationToken cancellationToken = default)
     {
         const string sql = """

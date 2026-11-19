@@ -2,16 +2,17 @@ namespace искулинария.Model;
 
 public sealed class User
 {
-    public int UserId { get; init; }
-    public string FirstName { get; init; } = string.Empty;
-    public string LastName { get; init; } = string.Empty;
-    public string Patronymic { get; init; } = string.Empty;
-    public DateTime? DateOfBirthday { get; init; }
-    public string Login { get; init; } = string.Empty;
-    public string Phone { get; init; } = string.Empty;
-    public string Address { get; init; } = string.Empty;
+    public int UserId { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Patronymic { get; set; } = string.Empty;
+    public DateTime? DateOfBirthday { get; set; }
+    public string Login { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
     public int RoleId { get; init; }
     public string RoleName { get; init; } = string.Empty;
+    internal string PasswordHash { get; set; } = string.Empty;
 
     public string FullName => string.Join(" ", new[] { LastName, FirstName, Patronymic }.Where(x => !string.IsNullOrWhiteSpace(x)));
 }
