@@ -1,4 +1,4 @@
-using искулинария.Model;
+﻿using искулинария.Model;
 using Npgsql;
 
 namespace искулинария.DbService;
@@ -30,7 +30,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
         command.ExecuteNonQuery();
     }
 
-    public async Task<User?> AuthenticateAsync(string login, string password, CancellationToken cancellationToken = default)
+    public User? Authenticate(string login, string password)
     {
         const string sql = """
             SELECT u.user_id, u.first_name, u.last_name, u.patronymic,
@@ -42,10 +42,10 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
             LIMIT 1;
             """;
 
-        await using var command = dataSource.CreateCommand(sql);
+        using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("login", login.Trim());
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
             return null;
 
         var passwordHash = reader.GetString(6);
@@ -105,7 +105,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
 
     private static string? NullIfEmpty(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    public async Task<List<User>> LoadAllUsersAsync(CancellationToken cancellationToken = default)
+    public List<User> LoadAllUsers()
     {
         const string sql = """
             SELECT u.user_id, u.first_name, u.last_name, u.patronymic,
@@ -113,13 +113,12 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
                    u.role_id, r.role_name
             FROM public.users AS u
             JOIN public.roles AS r ON r.role_id = u.role_id
-            ORDER BY u.last_name, u.first_name;
             """;
 
         var users = new List<User>();
-        await using var command = dataSource.CreateCommand(sql);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        using var command = dataSource.CreateCommand(sql);
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
         {
             users.Add(new User
             {
@@ -139,6 +138,48 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
         return users;
     }
 
+    public List<KeyValuePair<int, string>> LoadRoles()
+    {
+        const string sql = "SELECT role_id, role_name FROM public.roles ORDER BY role_id;";
+        var roles = new List<KeyValuePair<int, string>>();
+        using var command = dataSource.CreateCommand(sql);
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+            roles.Add(new KeyValuePair<int, string>(reader.GetInt32(0), reader.GetString(1)));
+        return roles;
+    }
+
+    public void UpdateUserRole(int userId, int roleId)
+    {
+        const string sql = "UPDATE public.users SET role_id = @role_id WHERE user_id = @user_id;";
+        using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue("user_id", userId);
+        command.Parameters.AddWithValue("role_id", roleId);
+        if (command.ExecuteNonQuery() != 1)
+            throw new InvalidOperationException("Пользователь не найден.");
+    }
+
+    public void DeleteUser(int userId)
+    {
+        const string sql = "DELETE FROM public.users WHERE user_id = @user_id;";
+        using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue("user_id", userId);
+        if (command.ExecuteNonQuery() != 1)
+            throw new InvalidOperationException("Пользователь не найден.");
+    }
+
+    public void ResetUserPassword(int userId, string newPassword)
+    {
+        if (!IsPasswordValid(newPassword))
+            throw new ArgumentException("Пароль не соответствует требованиям.", nameof(newPassword));
+
+        const string sql = "UPDATE public.users SET password = @password WHERE user_id = @user_id;";
+        using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue("user_id", userId);
+        command.Parameters.AddWithValue("password", Verification.GetSHA512Hash(newPassword));
+        if (command.ExecuteNonQuery() != 1)
+            throw new InvalidOperationException("Пользователь не найден.");
+    }
     private static User ReadUser(NpgsqlDataReader reader) => new()
     {
         UserId = reader.GetInt32(0),

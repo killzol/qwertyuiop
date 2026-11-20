@@ -1,4 +1,4 @@
-namespace искулинария.Model;
+﻿namespace искулинария.Model;
 
 public sealed class User
 {

@@ -1,4 +1,4 @@
-<Window x:Class="искулинария.Views.Windows.ProfileWindow"
+﻿<Window x:Class="искулинария.Views.Windows.ProfileWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -24,7 +24,7 @@
                 <TextBox x:Name="FirstNameBox" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Имя *" />
                 <TextBox x:Name="LastNameBox" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Фамилия *" />
                 <TextBox x:Name="PatronymicBox" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Отчество" />
-                <DatePicker x:Name="BirthdayPicker" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Дата рождения" />
+                <DatePicker x:Name="DateOfBirthday" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Дата рождения" />
                 <TextBox x:Name="LoginBox" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Логин" />
                 <TextBox x:Name="PhoneBox" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Телефон" />
                 <TextBox x:Name="AddressBox" Margin="0,0,0,12" materialDesign:HintAssist.Hint="Адрес" />

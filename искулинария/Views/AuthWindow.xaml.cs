@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using искулинария.DbService;
 using искулинария.Model;
@@ -15,11 +15,11 @@ public partial class AuthWindow : Window
         Loaded += (_, _) => LoginBox.Focus();
     }
 
-    private async void LoginButton_OnClick(object sender, RoutedEventArgs e)
+    private void LoginButton_OnClick(object sender, RoutedEventArgs e)
     {
         var login = LoginBox.Text.Trim();
-        var password = PasswordInput.Password;
-        if (login.Length == 0 || password.Length == 0)
+        var parol = PasswordBox.Password;
+        if (login.Length == 0 || parol.Length == 0)
         {
             StatusText.Text = "Введите логин и пароль.";
             return;
@@ -29,16 +29,16 @@ public partial class AuthWindow : Window
         StatusText.Text = "Проверка данных…";
         try
         {
-            await using var dataSource = DbConnect.CreateDataSource();
-            var users = new UserFromDb(dataSource);
-            var user = await users.AuthenticateAsync(login, password);
-            if (user is null)
+            using var podklyuchenie = DbConnect.CreateDataSource();
+            var polzovateli = new UserFromDb(podklyuchenie);
+            var polzovatel = polzovateli.Authenticate(login, parol);
+            if (polzovatel is null)
             {
                 StatusText.Text = "Неверный логин или пароль.";
                 return;
             }
 
-            CurrentUser = user;
+            CurrentUser = polzovatel;
             var mainWindow = new MainWindow();
             Application.Current.MainWindow = mainWindow;
             mainWindow.Show();
@@ -57,18 +57,9 @@ public partial class AuthWindow : Window
 
     private void RegisterButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var registrationWindow = new RegistrationForm();
-        Application.Current.MainWindow = registrationWindow;
-        registrationWindow.Show();
+        var oknoRegistracii = new RegistrationForm();
+        Application.Current.MainWindow = oknoRegistracii;
+        oknoRegistracii.Show();
         Close();
-    }
-
-    private void CredentialBox_OnKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            e.Handled = true;
-            LoginButton_OnClick(sender, new RoutedEventArgs());
-        }
     }
 }

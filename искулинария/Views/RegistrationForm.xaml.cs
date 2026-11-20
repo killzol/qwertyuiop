@@ -1,39 +1,42 @@
-using System.Windows;
+﻿using System.Windows;
 using искулинария.DbService;
 
 namespace искулинария.Views;
 
 public partial class RegistrationForm : Window
 {
-    public RegistrationForm()
+    private readonly bool _openedFromAdmin;
+
+    public RegistrationForm(bool openedFromAdmin = false)
     {
         InitializeComponent();
+        _openedFromAdmin = openedFromAdmin;
         Loaded += (_, _) => LoginBox.Focus();
     }
 
     private void RegisterButton_OnClick(object sender, RoutedEventArgs e)
     {
         var login = LoginBox.Text.Trim();
-        var firstName = FirstNameBox.Text.Trim();
-        var lastName = LastNameBox.Text.Trim();
-        var password = PasswordBox.Password;
-        var repeatedPassword = RepeatPasswordBox.Password;
+        var imya = FirstNameBox.Text.Trim();
+        var familiya = LastNameBox.Text.Trim();
+        var parol = PasswordBox.Password;
+        var povtorParol = RepeatPasswordBox.Password;
 
-        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(firstName) ||
-            string.IsNullOrWhiteSpace(lastName) || string.IsNullOrWhiteSpace(password) ||
-            string.IsNullOrWhiteSpace(repeatedPassword))
+        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(imya) ||
+            string.IsNullOrWhiteSpace(familiya) || string.IsNullOrWhiteSpace(parol) ||
+            string.IsNullOrWhiteSpace(povtorParol))
         {
             StatusText.Text = "Заполните все поля.";
             return;
         }
 
-        if (!UserFromDb.IsPasswordValid(password))
+        if (!UserFromDb.IsPasswordValid(parol))
         {
             StatusText.Text = "Пароль должен содержать не менее 6 символов, заглавную букву, цифру и один символ из ! @ # $ % ^.";
             return;
         }
 
-        if (password != repeatedPassword)
+        if (parol != povtorParol)
         {
             StatusText.Text = "Пароли не совпадают.";
             return;
@@ -44,18 +47,23 @@ public partial class RegistrationForm : Window
             RegisterButton.IsEnabled = false;
             StatusText.Text = "Создание учетной записи…";
 
-            using var dataSource = DbConnect.CreateDataSource();
-            var users = new UserFromDb(dataSource);
-
-            if (users.UserExists(login))
+            using var podklyuchenie = DbConnect.CreateDataSource();
+            var polzovateli = new UserFromDb(podklyuchenie);
+            if (polzovateli.UserExists(login))
             {
                 StatusText.Text = "Пользователь с таким логином уже существует.";
                 return;
             }
 
-            users.UserAdd(login, password, firstName, lastName);
-            MessageBox.Show(this, "Регистрация завершена. Теперь войдите в систему.", "Регистрация", MessageBoxButton.OK, MessageBoxImage.Information);
+            polzovateli.UserAdd(login, parol, imya, familiya);
+            if (_openedFromAdmin)
+            {
+                DialogResult = true;
+                Close();
+                return;
+            }
 
+            MessageBox.Show(this, "Регистрация успешна.", "Регистрация", MessageBoxButton.OK, MessageBoxImage.Information);
             var authWindow = new AuthWindow();
             Application.Current.MainWindow = authWindow;
             authWindow.Show();
@@ -74,6 +82,13 @@ public partial class RegistrationForm : Window
 
     private void BackButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (_openedFromAdmin)
+        {
+            DialogResult = false;
+            Close();
+            return;
+        }
+
         var authWindow = new AuthWindow();
         Application.Current.MainWindow = authWindow;
         authWindow.Show();

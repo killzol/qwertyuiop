@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using искулинария.DbService;
 using искулинария.Model;
 
@@ -6,24 +6,24 @@ namespace искулинария.Views.Windows;
 
 public partial class ProfileWindow : Window
 {
-    private readonly User _currentUser;
+    private readonly User _tekushiyPolzovatel;
     private bool _isPasswordChanged;
 
-    public ProfileWindow(User currentUser)
+    public ProfileWindow(User tekushiyPolzovatel)
     {
         InitializeComponent();
-        _currentUser = currentUser;
+        _tekushiyPolzovatel = tekushiyPolzovatel;
     }
 
     private void ProfileWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
-        FirstNameBox.Text = _currentUser.FirstName;
-        LastNameBox.Text = _currentUser.LastName;
-        PatronymicBox.Text = _currentUser.Patronymic;
-        BirthdayPicker.SelectedDate = _currentUser.DateOfBirthday;
-        LoginBox.Text = _currentUser.Login;
-        PhoneBox.Text = _currentUser.Phone;
-        AddressBox.Text = _currentUser.Address;
+        FirstNameBox.Text = _tekushiyPolzovatel.FirstName;
+        LastNameBox.Text = _tekushiyPolzovatel.LastName;
+        PatronymicBox.Text = _tekushiyPolzovatel.Patronymic;
+        DateOfBirthday.SelectedDate = _tekushiyPolzovatel.DateOfBirthday;
+        LoginBox.Text = _tekushiyPolzovatel.Login;
+        PhoneBox.Text = _tekushiyPolzovatel.Phone;
+        AddressBox.Text = _tekushiyPolzovatel.Address;
 
         OldPasswordBox.Clear();
         NewPasswordBox.Clear();
@@ -44,79 +44,79 @@ public partial class ProfileWindow : Window
     private void SaveButton_OnClick(object sender, RoutedEventArgs e)
     {
         StatusText.Text = string.Empty;
-        var firstName = FirstNameBox.Text.Trim();
-        var lastName = LastNameBox.Text.Trim();
+        var imya = FirstNameBox.Text.Trim();
+        var familiya = LastNameBox.Text.Trim();
 
-        if (firstName.Length == 0 || lastName.Length == 0)
+        if (imya.Length == 0 || familiya.Length == 0)
         {
             StatusText.Text = "Заполните имя и фамилию.";
             return;
         }
 
-        var newPasswordHash = _currentUser.PasswordHash;
+        var noviyHashParolya = _tekushiyPolzovatel.PasswordHash;
         if (_isPasswordChanged)
         {
-            var oldPassword = OldPasswordBox.Password;
-            var newPassword = NewPasswordBox.Password;
-            var repeatedPassword = ConfirmPasswordBox.Password;
+            var stariyParol = OldPasswordBox.Password;
+            var noviyParol = NewPasswordBox.Password;
+            var povtorParol = ConfirmPasswordBox.Password;
 
-            if (oldPassword.Length == 0 || newPassword.Length == 0 || repeatedPassword.Length == 0)
+            if (stariyParol.Length == 0 || noviyParol.Length == 0 || povtorParol.Length == 0)
             {
                 StatusText.Text = "Заполните все поля для смены пароля.";
                 return;
             }
 
-            if (!Verification.VerifySHA512Hash(oldPassword, _currentUser.PasswordHash))
+            if (!Verification.VerifySHA512Hash(stariyParol, _tekushiyPolzovatel.PasswordHash))
             {
                 StatusText.Text = "Старый пароль введён неверно.";
                 return;
             }
 
-            if (!UserFromDb.IsPasswordValid(newPassword))
+            if (!UserFromDb.IsPasswordValid(noviyParol))
             {
                 StatusText.Text = "Новый пароль не соответствует требованиям.";
                 return;
             }
 
-            if (newPassword != repeatedPassword)
+            if (noviyParol != povtorParol)
             {
                 StatusText.Text = "Новый пароль и подтверждение не совпадают.";
                 return;
             }
 
-            newPasswordHash = Verification.GetSHA512Hash(newPassword);
+            noviyHashParolya = Verification.GetSHA512Hash(noviyParol);
         }
 
-        var updatedUser = new User
+        var izmenenniyPolzovatel = new User
         {
-            UserId = _currentUser.UserId,
-            FirstName = firstName,
-            LastName = lastName,
+            UserId = _tekushiyPolzovatel.UserId,
+            FirstName = imya,
+            LastName = familiya,
             Patronymic = PatronymicBox.Text.Trim(),
-            DateOfBirthday = BirthdayPicker.SelectedDate,
+            DateOfBirthday = DateOfBirthday.SelectedDate,
             Login = LoginBox.Text.Trim(),
             Phone = PhoneBox.Text.Trim(),
             Address = AddressBox.Text.Trim(),
-            RoleId = _currentUser.RoleId,
-            RoleName = _currentUser.RoleName,
-            PasswordHash = newPasswordHash
+            RoleId = _tekushiyPolzovatel.RoleId,
+            RoleName = _tekushiyPolzovatel.RoleName,
+            PasswordHash = noviyHashParolya
         };
 
         SaveButton.IsEnabled = false;
         try
         {
-            using var dataSource = DbConnect.CreateDataSource();
-            var users = new UserFromDb(dataSource);
-            users.UserUpdateProfil(updatedUser, _isPasswordChanged);
+            using var podklyuchenie = DbConnect.CreateDataSource();
+            var polzovateli = new UserFromDb(podklyuchenie);
+            polzovateli.UserUpdateProfil(izmenenniyPolzovatel, _isPasswordChanged);
 
-            _currentUser.FirstName = updatedUser.FirstName;
-            _currentUser.LastName = updatedUser.LastName;
-            _currentUser.Patronymic = updatedUser.Patronymic;
-            _currentUser.DateOfBirthday = updatedUser.DateOfBirthday;
-            _currentUser.Login = updatedUser.Login;
-            _currentUser.Phone = updatedUser.Phone;
-            _currentUser.Address = updatedUser.Address;
-            _currentUser.PasswordHash = updatedUser.PasswordHash;
+            _tekushiyPolzovatel.FirstName = izmenenniyPolzovatel.FirstName;
+            _tekushiyPolzovatel.LastName = izmenenniyPolzovatel.LastName;
+            _tekushiyPolzovatel.Patronymic = izmenenniyPolzovatel.Patronymic;
+            _tekushiyPolzovatel.DateOfBirthday = izmenenniyPolzovatel.DateOfBirthday;
+            _tekushiyPolzovatel.Login = izmenenniyPolzovatel.Login;
+            _tekushiyPolzovatel.Phone = izmenenniyPolzovatel.Phone;
+            _tekushiyPolzovatel.Address = izmenenniyPolzovatel.Address;
+            _tekushiyPolzovatel.PasswordHash = izmenenniyPolzovatel.PasswordHash;
 
             DialogResult = true;
             Close();

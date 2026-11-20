@@ -1,4 +1,4 @@
-using System.Windows.Media;
+﻿using System.Windows.Media;
 
 namespace искулинария.Model;
 
@@ -10,7 +10,6 @@ public sealed class Bludo
     public string CategoryName { get; init; } = "Без категории";
     public string Base { get; init; } = string.Empty;
     public int? Yield { get; init; }
-    public string Recipe { get; init; } = string.Empty;
     public ImageSource Image { get; init; } = default!;
 }
 

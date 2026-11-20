@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using искулинария.DbService;
 using искулинария.Model;
 using искулинария.Views;
@@ -9,8 +9,8 @@ namespace искулинария;
 
 public partial class MainWindow : Window
 {
-    private BludaFromDB? _repository;
-    private List<Bludo> _allBludos = [];
+    private BludaFromDB? _rabotaSBazoy;
+    private List<Bludo> _vseBlyuda = [];
 
     public MainWindow()
     {
@@ -19,36 +19,36 @@ public partial class MainWindow : Window
         Closed += MainWindow_OnClosed;
     }
 
-    private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+    private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
-        var currentUser = AuthWindow.CurrentUser;
-        if (currentUser is null)
+        var tekushiyPolzovatel = AuthWindow.CurrentUser;
+        if (tekushiyPolzovatel is null)
         {
             Close();
             return;
         }
 
-        UserNameText.Text = currentUser.FullName;
-        AddDishButton.Visibility = currentUser.RoleId == UserRoles.Manager ? Visibility.Collapsed : Visibility.Visible;
-        UsersTabItem.Visibility = currentUser.RoleId == UserRoles.Administrator ? Visibility.Visible : Visibility.Collapsed;
+        UserNameText.Text = tekushiyPolzovatel.FullName;
+        AddDishButton.Visibility = tekushiyPolzovatel.RoleId == UserRoles.Manager ? Visibility.Collapsed : Visibility.Visible;
+        UsersTabItem.Visibility = tekushiyPolzovatel.RoleId == UserRoles.Administrator ? Visibility.Visible : Visibility.Collapsed;
 
-        await LoadDataAsync();
+        LoadData();
     }
 
-    private async Task LoadDataAsync()
+    private void LoadData()
     {
         try
         {
             SetStatus("Подключение к базе…", "#D7F1ED");
-            _repository ??= new BludaFromDB(DbConnect.CreateDataSource());
+            _rabotaSBazoy ??= new BludaFromDB(DbConnect.CreateDataSource());
 
-            var categories = await _repository.LoadCategoriesAsync();
-            CategoryComboBox.ItemsSource = categories;
+            var kategorii = _rabotaSBazoy.LoadCategories();
+            CategoryComboBox.ItemsSource = kategorii;
             CategoryComboBox.SelectedIndex = 0;
 
-            _allBludos = await _repository.LoadBludosAsync();
+            _vseBlyuda = _rabotaSBazoy.LoadBludos();
             ApplyFilters();
-            SetStatus($"Блюд в базе: {_allBludos.Count}", "#D7F1ED");
+            SetStatus($"Блюд в базе: {_vseBlyuda.Count}", "#D7F1ED");
         }
         catch (Exception ex)
         {
@@ -66,19 +66,19 @@ public partial class MainWindow : Window
 
     private void ApplyFilters()
     {
-        var query = SearchBox.Text.Trim();
-        var selectedCategory = CategoryComboBox.SelectedItem as CategoryFilter;
+        var poisk = SearchBox.Text.Trim();
+        var vybrannayaKategoriya = CategoryComboBox.SelectedItem as CategoryFilter;
 
-        var filtered = _allBludos.Where(bludo =>
-            (string.IsNullOrWhiteSpace(query) || bludo.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)) &&
-            (selectedCategory?.Id is null || bludo.CategoryId == selectedCategory.Id));
+        var spisokPosleFiltra = _vseBlyuda.Where(bludo =>
+            (string.IsNullOrWhiteSpace(poisk) || bludo.Name.Contains(poisk, StringComparison.CurrentCultureIgnoreCase)) &&
+            (vybrannayaKategoriya?.Id is null || bludo.CategoryId == vybrannayaKategoriya.Id));
 
-        var result = filtered.ToList();
-        BludoItems.ItemsSource = result;
-        EmptyMessage.Text = _allBludos.Count == 0
-            ? "В таблице bluda пока нет записей."
+        var rezultat = spisokPosleFiltra.ToList();
+        BludoItems.ItemsSource = rezultat;
+        EmptyMessage.Text = _vseBlyuda.Count == 0
+            ? "В таблице блюд пока нет записей."
             : "По заданным условиям блюда не найдены.";
-        EmptyMessage.Visibility = result.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyMessage.Visibility = rezultat.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void SearchBox_OnTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -91,19 +91,19 @@ public partial class MainWindow : Window
         ApplyFilters();
     }
 
-    private async void RefreshButton_OnClick(object sender, RoutedEventArgs e)
+    private void RefreshButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await LoadDataAsync();
+        LoadData();
     }
 
     private void ProfileButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (AuthWindow.CurrentUser is not { } currentUser)
+        if (AuthWindow.CurrentUser is not { } tekushiyPolzovatel)
             return;
 
-        var profileWindow = new ProfileWindow(currentUser) { Owner = this };
+        var profileWindow = new ProfileWindow(tekushiyPolzovatel) { Owner = this };
         if (profileWindow.ShowDialog() == true)
-            UserNameText.Text = currentUser.FullName;
+            UserNameText.Text = tekushiyPolzovatel.FullName;
     }
     private void ExitButton_OnClick(object sender, RoutedEventArgs e)
     {
@@ -130,9 +130,9 @@ public partial class MainWindow : Window
         ConnectionStatus.Foreground = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString(colorHex)!;
     }
 
-    private async void MainWindow_OnClosed(object? sender, EventArgs e)
+    private void MainWindow_OnClosed(object? sender, EventArgs e)
     {
-        if (_repository is not null)
-            await _repository.DisposeAsync();
+        if (_rabotaSBazoy is not null)
+            _rabotaSBazoy.Dispose();
     }
 }
