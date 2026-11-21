@@ -4,8 +4,15 @@ using Npgsql;
 
 namespace искулинария.DbService;
 
-public sealed class BludaFromDB(NpgsqlDataSource dataSource) : IDisposable
+public sealed class BludaFromDB : IDisposable
 {
+    private readonly NpgsqlDataSource _dataSource;
+
+    public BludaFromDB(NpgsqlDataSource dataSource)
+    {
+        _dataSource = dataSource;
+    }
+
     public List<CategoryFilter> LoadCategories()
     {
         const string sql = """
@@ -19,7 +26,7 @@ public sealed class BludaFromDB(NpgsqlDataSource dataSource) : IDisposable
             new() { Id = null, Name = "Все категории" }
         };
 
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -50,7 +57,7 @@ public sealed class BludaFromDB(NpgsqlDataSource dataSource) : IDisposable
             """;
 
         var bludos = new List<Bludo>();
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -69,5 +76,8 @@ public sealed class BludaFromDB(NpgsqlDataSource dataSource) : IDisposable
         return bludos;
     }
 
-    public void Dispose() => dataSource.Dispose();
+    public void Dispose()
+    {
+        _dataSource.Dispose();
+    }
 }

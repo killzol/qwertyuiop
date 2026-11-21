@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using искулинария.DbService;
 using искулинария.Model;
@@ -48,6 +48,7 @@ public partial class AdminPage : Page
             LoginBox.Text = "";
             PhoneBox.Text = "";
             AddressBox.Text = "";
+            RoleComboBox.SelectedValue = null;
             RoleComboBox.IsEnabled = false;
             ChangeRoleButton.IsEnabled = false;
             ResetPasswordButton.IsEnabled = false;

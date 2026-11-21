@@ -4,17 +4,17 @@ namespace искулинария.Model;
 
 public sealed class Bludo
 {
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public int? CategoryId { get; init; }
-    public string CategoryName { get; init; } = "Без категории";
-    public string Base { get; init; } = string.Empty;
-    public int? Yield { get; init; }
-    public ImageSource Image { get; init; } = default!;
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int? CategoryId { get; set; }
+    public string CategoryName { get; set; } = "Без категории";
+    public string Base { get; set; } = string.Empty;
+    public int? Yield { get; set; }
+    public ImageSource Image { get; set; } = null!;
 }
 
 public sealed class CategoryFilter
 {
-    public int? Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+    public int? Id { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

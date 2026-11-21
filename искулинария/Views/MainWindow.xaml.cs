@@ -1,16 +1,17 @@
 ﻿using System.Windows;
+using System.Windows.Media;
 using искулинария.DbService;
 using искулинария.Model;
 using искулинария.Views;
-using искулинария.Views.Windows;
 using искулинария.Views.Pages;
+using искулинария.Views.Windows;
 
 namespace искулинария;
 
 public partial class MainWindow : Window
 {
     private BludaFromDB? _rabotaSBazoy;
-    private List<Bludo> _vseBlyuda = [];
+    private List<Bludo> _vseBlyuda = new List<Bludo>();
 
     public MainWindow()
     {
@@ -21,16 +22,21 @@ public partial class MainWindow : Window
 
     private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
-        var tekushiyPolzovatel = AuthWindow.CurrentUser;
-        if (tekushiyPolzovatel is null)
+        User? polzovatel = AuthWindow.CurrentUser;
+        if (polzovatel == null)
         {
             Close();
             return;
         }
 
-        UserNameText.Text = tekushiyPolzovatel.FullName;
-        AddDishButton.Visibility = tekushiyPolzovatel.RoleId == UserRoles.Manager ? Visibility.Collapsed : Visibility.Visible;
-        UsersTabItem.Visibility = tekushiyPolzovatel.RoleId == UserRoles.Administrator ? Visibility.Visible : Visibility.Collapsed;
+        UserNameText.Text = polzovatel.FullName;
+        AddDishButton.Visibility = Visibility.Visible;
+        if (polzovatel.RoleId == UserRoles.Manager)
+            AddDishButton.Visibility = Visibility.Collapsed;
+
+        UsersTabItem.Visibility = Visibility.Collapsed;
+        if (polzovatel.RoleId == UserRoles.Administrator)
+            UsersTabItem.Visibility = Visibility.Visible;
 
         LoadData();
     }
@@ -40,45 +46,54 @@ public partial class MainWindow : Window
         try
         {
             SetStatus("Подключение к базе…", "#D7F1ED");
-            _rabotaSBazoy ??= new BludaFromDB(DbConnect.CreateDataSource());
 
-            var kategorii = _rabotaSBazoy.LoadCategories();
-            CategoryComboBox.ItemsSource = kategorii;
+            if (_rabotaSBazoy == null)
+                _rabotaSBazoy = new BludaFromDB(DbConnect.CreateDataSource());
+
+            CategoryComboBox.ItemsSource = _rabotaSBazoy.LoadCategories();
             CategoryComboBox.SelectedIndex = 0;
 
             _vseBlyuda = _rabotaSBazoy.LoadBludos();
             ApplyFilters();
-            SetStatus($"Блюд в базе: {_vseBlyuda.Count}", "#D7F1ED");
+            SetStatus("Блюд в базе: " + _vseBlyuda.Count, "#D7F1ED");
         }
         catch (Exception ex)
         {
             SetStatus("Нет подключения к базе", "#FFE0B2");
             EmptyMessage.Text = "Не удалось загрузить блюда. Проверьте appsettings.json и подключение PostgreSQL.";
             EmptyMessage.Visibility = Visibility.Visible;
-            MessageBox.Show(
-                this,
-                $"Не удалось загрузить данные из PostgreSQL.\n\n{ex.Message}",
-                "Ошибка подключения",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            MessageBox.Show(this, ex.Message, "Ошибка подключения", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     private void ApplyFilters()
     {
-        var poisk = SearchBox.Text.Trim();
-        var vybrannayaKategoriya = CategoryComboBox.SelectedItem as CategoryFilter;
+        string poisk = SearchBox.Text.Trim();
+        CategoryFilter? kategoriya = CategoryComboBox.SelectedItem as CategoryFilter;
+        List<Bludo> spisokBlyud = new List<Bludo>();
 
-        var spisokPosleFiltra = _vseBlyuda.Where(bludo =>
-            (string.IsNullOrWhiteSpace(poisk) || bludo.Name.Contains(poisk, StringComparison.CurrentCultureIgnoreCase)) &&
-            (vybrannayaKategoriya?.Id is null || bludo.CategoryId == vybrannayaKategoriya.Id));
+        foreach (Bludo bludo in _vseBlyuda)
+        {
+            if (poisk != "" && !bludo.Name.ToLower().Contains(poisk.ToLower()))
+                continue;
 
-        var rezultat = spisokPosleFiltra.ToList();
-        BludoItems.ItemsSource = rezultat;
-        EmptyMessage.Text = _vseBlyuda.Count == 0
-            ? "В таблице блюд пока нет записей."
-            : "По заданным условиям блюда не найдены.";
-        EmptyMessage.Visibility = rezultat.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (kategoriya != null && kategoriya.Id != null && bludo.CategoryId != kategoriya.Id)
+                continue;
+
+            spisokBlyud.Add(bludo);
+        }
+
+        BludoItems.ItemsSource = spisokBlyud;
+
+        if (_vseBlyuda.Count == 0)
+            EmptyMessage.Text = "В таблице блюд пока нет записей.";
+        else
+            EmptyMessage.Text = "По заданным условиям блюда не найдены.";
+
+        if (spisokBlyud.Count == 0)
+            EmptyMessage.Visibility = Visibility.Visible;
+        else
+            EmptyMessage.Visibility = Visibility.Collapsed;
     }
 
     private void SearchBox_OnTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -98,27 +113,34 @@ public partial class MainWindow : Window
 
     private void ProfileButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (AuthWindow.CurrentUser is not { } tekushiyPolzovatel)
+        User? polzovatel = AuthWindow.CurrentUser;
+        if (polzovatel == null)
             return;
 
-        var profileWindow = new ProfileWindow(tekushiyPolzovatel) { Owner = this };
-        if (profileWindow.ShowDialog() == true)
-            UserNameText.Text = tekushiyPolzovatel.FullName;
+        ProfileWindow forma = new ProfileWindow(polzovatel);
+        forma.Owner = this;
+
+        if (forma.ShowDialog() == true)
+            UserNameText.Text = polzovatel.FullName;
     }
+
     private void ExitButton_OnClick(object sender, RoutedEventArgs e)
     {
         AuthWindow.CurrentUser = null;
-        var authWindow = new AuthWindow();
-        Application.Current.MainWindow = authWindow;
-        authWindow.Show();
+        AuthWindow forma = new AuthWindow();
+        Application.Current.MainWindow = forma;
+        forma.Show();
         Close();
     }
 
     private void MainTabs_OnSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (ReferenceEquals(MainTabs.SelectedItem, UsersTabItem) &&
-            AuthWindow.CurrentUser?.RoleId == UserRoles.Administrator &&
-            AdminFrame.Content is null)
+        if (MainTabs.SelectedItem == ProductsTabItem && ProductsFrame.Content == null)
+            ProductsFrame.Navigate(new ProductsPage());
+
+        if (MainTabs.SelectedItem == UsersTabItem && AdminFrame.Content == null &&
+            AuthWindow.CurrentUser != null &&
+            AuthWindow.CurrentUser.RoleId == UserRoles.Administrator)
         {
             AdminFrame.Navigate(new AdminPage());
         }
@@ -127,12 +149,12 @@ public partial class MainWindow : Window
     private void SetStatus(string message, string colorHex)
     {
         ConnectionStatus.Text = message;
-        ConnectionStatus.Foreground = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString(colorHex)!;
+        ConnectionStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
     }
 
     private void MainWindow_OnClosed(object? sender, EventArgs e)
     {
-        if (_rabotaSBazoy is not null)
+        if (_rabotaSBazoy != null)
             _rabotaSBazoy.Dispose();
     }
 }

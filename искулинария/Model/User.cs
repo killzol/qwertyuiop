@@ -10,11 +10,20 @@ public sealed class User
     public string Login { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
-    public int RoleId { get; init; }
-    public string RoleName { get; init; } = string.Empty;
+    public int RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
     internal string PasswordHash { get; set; } = string.Empty;
 
-    public string FullName => string.Join(" ", new[] { LastName, FirstName, Patronymic }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    public string FullName
+    {
+        get
+        {
+            string fio = LastName + " " + FirstName;
+            if (Patronymic != "")
+                fio = fio + " " + Patronymic;
+            return fio.Trim();
+        }
+    }
 }
 
 public static class UserRoles

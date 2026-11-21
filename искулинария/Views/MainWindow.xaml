@@ -178,12 +178,7 @@
                                 <TextBlock Text="ПРОДУКТЫ" VerticalAlignment="Center" />
                             </StackPanel>
                         </TabItem.Header>
-                        <Grid Margin="22">
-                            <StackPanel>
-                                <TextBlock Text="Продукты" FontSize="23" FontWeight="SemiBold" Foreground="#263E41" />
-                                <TextBlock Text="Состав и пищевая ценность продуктов будут выведены здесь." Margin="0,8,0,0" Foreground="#607572" />
-                            </StackPanel>
-                        </Grid>
+                        <Frame x:Name="ProductsFrame" NavigationUIVisibility="Hidden" />
                     </TabItem>
 
                     <TabItem x:Name="RecipesTabItem">

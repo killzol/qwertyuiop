@@ -7,7 +7,7 @@ namespace искулинария.Views.Windows;
 public partial class ProfileWindow : Window
 {
     private readonly User _tekushiyPolzovatel;
-    private bool _isPasswordChanged;
+    private bool _parolIzmenen;
 
     public ProfileWindow(User tekushiyPolzovatel)
     {
@@ -32,7 +32,7 @@ public partial class ProfileWindow : Window
 
     private void ChangePasswordButton_OnClick(object sender, RoutedEventArgs e)
     {
-        _isPasswordChanged = true;
+        _parolIzmenen = true;
         PasswordPanel.Visibility = Visibility.Visible;
         ChangePasswordButton.Visibility = Visibility.Collapsed;
         OldPasswordBox.Clear();
@@ -54,7 +54,7 @@ public partial class ProfileWindow : Window
         }
 
         var noviyHashParolya = _tekushiyPolzovatel.PasswordHash;
-        if (_isPasswordChanged)
+        if (_parolIzmenen)
         {
             var stariyParol = OldPasswordBox.Password;
             var noviyParol = NewPasswordBox.Password;
@@ -102,12 +102,11 @@ public partial class ProfileWindow : Window
             PasswordHash = noviyHashParolya
         };
 
-        SaveButton.IsEnabled = false;
         try
         {
             using var podklyuchenie = DbConnect.CreateDataSource();
             var polzovateli = new UserFromDb(podklyuchenie);
-            polzovateli.UserUpdateProfil(izmenenniyPolzovatel, _isPasswordChanged);
+            polzovateli.UserUpdateProfil(izmenenniyPolzovatel, _parolIzmenen);
 
             _tekushiyPolzovatel.FirstName = izmenenniyPolzovatel.FirstName;
             _tekushiyPolzovatel.LastName = izmenenniyPolzovatel.LastName;
@@ -125,10 +124,6 @@ public partial class ProfileWindow : Window
         {
             StatusText.Text = "Не удалось сохранить профиль.";
             MessageBox.Show(this, ex.Message, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            SaveButton.IsEnabled = true;
         }
     }
 

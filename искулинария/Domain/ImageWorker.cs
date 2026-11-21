@@ -10,7 +10,7 @@ public static class ImageWorker
     {
         var safeName = string.IsNullOrWhiteSpace(fileName)
             ? "picture.jpg"
-            : System.IO.Path.GetFileName(fileName);
+            : Path.GetFileName(fileName);
 
         try
         {

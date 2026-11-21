@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Input;
 using искулинария.DbService;
 using искулинария.Model;
 
@@ -12,7 +11,12 @@ public partial class AuthWindow : Window
     public AuthWindow()
     {
         InitializeComponent();
-        Loaded += (_, _) => LoginBox.Focus();
+        Loaded += AuthWindow_OnLoaded;
+    }
+
+    private void AuthWindow_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        LoginBox.Focus();
     }
 
     private void LoginButton_OnClick(object sender, RoutedEventArgs e)
@@ -25,8 +29,6 @@ public partial class AuthWindow : Window
             return;
         }
 
-        LoginButton.IsEnabled = false;
-        StatusText.Text = "Проверка данных…";
         try
         {
             using var podklyuchenie = DbConnect.CreateDataSource();
@@ -48,10 +50,6 @@ public partial class AuthWindow : Window
         {
             StatusText.Text = "Не удалось подключиться к базе данных.";
             MessageBox.Show(this, ex.Message, "Ошибка авторизации", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            LoginButton.IsEnabled = true;
         }
     }
 

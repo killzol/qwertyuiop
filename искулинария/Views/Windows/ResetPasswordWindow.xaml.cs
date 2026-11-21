@@ -48,7 +48,6 @@ public partial class ResetPasswordWindow : Window
         if (answer != MessageBoxResult.OK)
             return;
 
-        ChangeButton.IsEnabled = false;
         try
         {
             using var podklyuchenie = DbConnect.CreateDataSource();
@@ -60,10 +59,6 @@ public partial class ResetPasswordWindow : Window
         {
             StatusText.Text = "Не удалось изменить пароль.";
             MessageBox.Show(this, ex.Message, "Ошибка сброса пароля", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            ChangeButton.IsEnabled = true;
         }
     }
 

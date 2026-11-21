@@ -3,18 +3,41 @@ using Npgsql;
 
 namespace искулинария.DbService;
 
-public sealed class UserFromDb(NpgsqlDataSource dataSource)
+public sealed class UserFromDb
 {
-    public static bool IsPasswordValid(string password) =>
-        password.Length >= 6 &&
-        password.Any(char.IsUpper) &&
-        password.Any(char.IsDigit) &&
-        password.Any(character => "!@#$%^".Contains(character));
+    private readonly NpgsqlDataSource _dataSource;
+
+    public UserFromDb(NpgsqlDataSource dataSource)
+    {
+        _dataSource = dataSource;
+    }
+
+    public static bool IsPasswordValid(string password)
+    {
+        if (password.Length < 6)
+            return false;
+
+        bool estZaglavnaya = false;
+        bool estCifra = false;
+        bool estSimvol = false;
+
+        foreach (char bukva in password)
+        {
+            if (char.IsUpper(bukva))
+                estZaglavnaya = true;
+            if (char.IsDigit(bukva))
+                estCifra = true;
+            if ("!@#$%^".Contains(bukva))
+                estSimvol = true;
+        }
+
+        return estZaglavnaya && estCifra && estSimvol;
+    }
 
     public bool UserExists(string login)
     {
         const string sql = "SELECT EXISTS (SELECT 1 FROM public.users WHERE LOWER(login) = LOWER(@login));";
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("login", login.Trim());
         return (bool)command.ExecuteScalar()!;
     }
@@ -22,7 +45,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
     public void UserAdd(string login, string password, string firstName, string lastName)
     {
         const string sql = "INSERT INTO public.users (login, password, first_name, last_name) VALUES (@login, @password, @first_name, @last_name);";
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("login", login.Trim());
         command.Parameters.AddWithValue("password", Verification.GetSHA512Hash(password));
         command.Parameters.AddWithValue("first_name", firstName.Trim());
@@ -42,7 +65,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
             LIMIT 1;
             """;
 
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("login", login.Trim());
         using var reader = command.ExecuteReader();
         if (!reader.Read())
@@ -87,15 +110,18 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
         if (isPasswordChanged && string.IsNullOrWhiteSpace(user.PasswordHash))
             throw new InvalidOperationException("Не задан новый хеш пароля.");
 
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("user_id", user.UserId);
         command.Parameters.AddWithValue("first_name", user.FirstName.Trim());
         command.Parameters.AddWithValue("last_name", user.LastName.Trim());
-        command.Parameters.AddWithValue("patronymic", (object?)NullIfEmpty(user.Patronymic) ?? DBNull.Value);
-        command.Parameters.AddWithValue("date_of_birthday", NpgsqlTypes.NpgsqlDbType.Date, (object?)user.DateOfBirthday?.Date ?? DBNull.Value);
+        command.Parameters.AddWithValue("patronymic", NullIfEmpty(user.Patronymic));
+        if (user.DateOfBirthday.HasValue)
+            command.Parameters.AddWithValue("date_of_birthday", NpgsqlTypes.NpgsqlDbType.Date, user.DateOfBirthday.Value.Date);
+        else
+            command.Parameters.AddWithValue("date_of_birthday", NpgsqlTypes.NpgsqlDbType.Date, DBNull.Value);
         command.Parameters.AddWithValue("login", user.Login.Trim());
-        command.Parameters.AddWithValue("phone", (object?)NullIfEmpty(user.Phone) ?? DBNull.Value);
-        command.Parameters.AddWithValue("adress", (object?)NullIfEmpty(user.Address) ?? DBNull.Value);
+        command.Parameters.AddWithValue("phone", NullIfEmpty(user.Phone));
+        command.Parameters.AddWithValue("adress", NullIfEmpty(user.Address));
         if (isPasswordChanged)
             command.Parameters.AddWithValue("password", user.PasswordHash);
 
@@ -103,8 +129,12 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
             throw new InvalidOperationException("Профиль пользователя не найден в базе данных.");
     }
 
-    private static string? NullIfEmpty(string value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static object NullIfEmpty(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return DBNull.Value;
+        return value.Trim();
+    }
     public List<User> LoadAllUsers()
     {
         const string sql = """
@@ -116,7 +146,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
             """;
 
         var users = new List<User>();
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -142,7 +172,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
     {
         const string sql = "SELECT role_id, role_name FROM public.roles ORDER BY role_id;";
         var roles = new List<KeyValuePair<int, string>>();
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         using var reader = command.ExecuteReader();
         while (reader.Read())
             roles.Add(new KeyValuePair<int, string>(reader.GetInt32(0), reader.GetString(1)));
@@ -152,7 +182,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
     public void UpdateUserRole(int userId, int roleId)
     {
         const string sql = "UPDATE public.users SET role_id = @role_id WHERE user_id = @user_id;";
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("user_id", userId);
         command.Parameters.AddWithValue("role_id", roleId);
         if (command.ExecuteNonQuery() != 1)
@@ -162,7 +192,7 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
     public void DeleteUser(int userId)
     {
         const string sql = "DELETE FROM public.users WHERE user_id = @user_id;";
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("user_id", userId);
         if (command.ExecuteNonQuery() != 1)
             throw new InvalidOperationException("Пользователь не найден.");
@@ -174,23 +204,29 @@ public sealed class UserFromDb(NpgsqlDataSource dataSource)
             throw new ArgumentException("Пароль не соответствует требованиям.", nameof(newPassword));
 
         const string sql = "UPDATE public.users SET password = @password WHERE user_id = @user_id;";
-        using var command = dataSource.CreateCommand(sql);
+        using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("user_id", userId);
         command.Parameters.AddWithValue("password", Verification.GetSHA512Hash(newPassword));
         if (command.ExecuteNonQuery() != 1)
             throw new InvalidOperationException("Пользователь не найден.");
     }
-    private static User ReadUser(NpgsqlDataReader reader) => new()
+    private static User ReadUser(NpgsqlDataReader reader)
     {
-        UserId = reader.GetInt32(0),
-        FirstName = reader.GetString(1),
-        LastName = reader.GetString(2),
-        Patronymic = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-        DateOfBirthday = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
-        Login = reader.GetString(5),
-        Phone = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
-        Address = reader.IsDBNull(8) ? string.Empty : reader.GetString(8),
-        RoleId = reader.GetInt32(9),
-        RoleName = reader.GetString(10)
-    };
+        User polzovatel = new User();
+        polzovatel.UserId = reader.GetInt32(0);
+        polzovatel.FirstName = reader.GetString(1);
+        polzovatel.LastName = reader.GetString(2);
+        if (!reader.IsDBNull(3))
+            polzovatel.Patronymic = reader.GetString(3);
+        if (!reader.IsDBNull(4))
+            polzovatel.DateOfBirthday = reader.GetDateTime(4);
+        polzovatel.Login = reader.GetString(5);
+        if (!reader.IsDBNull(7))
+            polzovatel.Phone = reader.GetString(7);
+        if (!reader.IsDBNull(8))
+            polzovatel.Address = reader.GetString(8);
+        polzovatel.RoleId = reader.GetInt32(9);
+        polzovatel.RoleName = reader.GetString(10);
+        return polzovatel;
+    }
 }

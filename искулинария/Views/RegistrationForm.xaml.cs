@@ -11,7 +11,12 @@ public partial class RegistrationForm : Window
     {
         InitializeComponent();
         _openedFromAdmin = openedFromAdmin;
-        Loaded += (_, _) => LoginBox.Focus();
+        Loaded += RegistrationForm_OnLoaded;
+    }
+
+    private void RegistrationForm_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        LoginBox.Focus();
     }
 
     private void RegisterButton_OnClick(object sender, RoutedEventArgs e)
@@ -44,9 +49,6 @@ public partial class RegistrationForm : Window
 
         try
         {
-            RegisterButton.IsEnabled = false;
-            StatusText.Text = "Создание учетной записи…";
-
             using var podklyuchenie = DbConnect.CreateDataSource();
             var polzovateli = new UserFromDb(podklyuchenie);
             if (polzovateli.UserExists(login))
@@ -73,10 +75,6 @@ public partial class RegistrationForm : Window
         {
             StatusText.Text = "Не удалось зарегистрировать пользователя.";
             MessageBox.Show(this, ex.Message, "Ошибка регистрации", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            RegisterButton.IsEnabled = true;
         }
     }
 
